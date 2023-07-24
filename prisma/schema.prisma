@@ -5,9 +5,15 @@ generator client {
     provider = "prisma-client-js"
 }
 
+// Planetscale connection
 datasource db {
-    provider = "sqlite"
-    url      = env("DATABASE_URL")
+  provider = "mysql"
+  url = env("DATABASE_URL")
+  // Planetscale does not have traditional relations
+  // This is because it's using Vitess under the hood
+  // With planetscale we must build relations more strictly using IDs
+  // Prisma will make it feel almost identical to traditional SQL
+  relationMode = "prisma"
 }
 
 model Example {
