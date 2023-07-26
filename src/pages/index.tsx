@@ -1,10 +1,11 @@
-import { useUser, SignInButton, SignOutButton } from "@clerk/nextjs";
+import { useUser, SignOutButton } from "@clerk/nextjs";
 import Head from "next/head";
 import Image from "next/image";
 import { type RouterOutputs, api } from "~/utils/api";
 
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import { LoadingPage } from "~/components/loading";
 
 dayjs.extend(relativeTime);
 
@@ -24,7 +25,7 @@ const CreatePostWizard = () => {
       />
       <input
         placeholder="Type some emojis!"
-        className="grow bg-transparent p-2 outline-none"
+        className="grow rounded bg-transparent p-2 outline-none focus:outline-slate-600"
       />
     </div>
   );
@@ -54,8 +55,24 @@ const PostView = ({ post, author }: PostWithAuthor) => {
             post.createdAt
           ).fromNow()}`}</span>
         </div>
-        <span>{post.content}</span>
+        <span className="text-xl">{post.content}</span>
       </div>
+    </div>
+  );
+};
+
+const Feed = () => {
+  // Will use cached data if available and not invalidated
+  const posts = api.post.getAll.useQuery();
+
+  if (posts.isLoading) return <LoadingPage size={16} />;
+  if (!posts.data) return <div>Something went wrong...</div>;
+
+  return (
+    <div className="flex flex-col">
+      {posts.data?.map((postWithAuthor) => (
+        <PostView key={postWithAuthor.post.id} {...postWithAuthor} />
+      ))}
     </div>
   );
 };
@@ -63,10 +80,15 @@ const PostView = ({ post, author }: PostWithAuthor) => {
 export default function Home() {
   const user = useUser();
 
-  const posts = api.post.getAll.useQuery();
+  /** Start fetching posts ASAP
+   * NOTE: we still fetch posts here (even though we don't use it here) to make sure the data starts fetching early (i.e. before <Feed /> renders)
+   * Because we fetch this early, React Query will cache the first fetch
+   * When <Feed /> renders, it will use the cached data (rather than refetching)
+   */
+  api.post.getAll.useQuery();
 
-  if (posts.isLoading) return <div>Loading...</div>;
-  if (!posts.data) return <div>Something went wrong...</div>;
+  // Return empty div if User isn't loaded, since user tends to load faster
+  if (!user.isLoaded) return <div />;
 
   return (
     <>
@@ -77,23 +99,19 @@ export default function Home() {
       </Head>
       <main className="flex min-h-screen justify-center">
         <div className="w-full border-x border-slate-400 md:max-w-2xl">
-          {/* <header>
-            <UserButton />
-          </header> */}
-
           <div className="flex justify-between gap-4 border-b border-slate-400 p-4">
             <CreatePostWizard />
             {user.isSignedIn && (
-              <div className="flex min-w-max justify-center">
-                <SignOutButton />
+              <div className="flex min-w-max items-center justify-center ">
+                <SignOutButton>
+                  <button className="rounded bg-slate-800 p-4 hover:bg-opacity-90">
+                    Sign Out
+                  </button>
+                </SignOutButton>
               </div>
             )}
           </div>
-          <div className="flex flex-col">
-            {posts.data?.map((postWithAuthor) => (
-              <PostView key={postWithAuthor.post.id} {...postWithAuthor} />
-            ))}
-          </div>
+          <Feed />
         </div>
       </main>
     </>
