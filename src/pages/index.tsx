@@ -6,11 +6,24 @@ import { type RouterOutputs, api } from "~/utils/api";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { LoadingPage } from "~/components/loading";
+import { useState } from "react";
 
 dayjs.extend(relativeTime);
 
 const CreatePostWizard = () => {
+  const [input, setInput] = useState("");
+
   const { user } = useUser();
+  const ctx = api.useContext();
+
+  const { mutate, isLoading: isPosting } = api.post.create.useMutation({
+    onSuccess: () => {
+      setInput("");
+      // returns promise but we don't need to await it, as it is a background process
+      // `void` indicates this to TS
+      void ctx.post.getAll.invalidate();
+    },
+  });
 
   if (!user) return null;
 
@@ -24,9 +37,13 @@ const CreatePostWizard = () => {
         className="rounded-full"
       />
       <input
-        placeholder="Type some emojis!"
         className="grow rounded bg-transparent p-2 outline-none focus:outline-slate-600"
+        placeholder="Type some emojis!"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        disabled={isPosting}
       />
+      <button onClick={(e) => mutate({ content: input })}>Post</button>
     </div>
   );
 };
@@ -55,7 +72,7 @@ const PostView = ({ post, author }: PostWithAuthor) => {
             post.createdAt
           ).fromNow()}`}</span>
         </div>
-        <span className="text-xl">{post.content}</span>
+        <span className="text-2xl">{post.content}</span>
       </div>
     </div>
   );
