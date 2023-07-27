@@ -43,7 +43,7 @@ const CreatePostWizard = () => {
         onChange={(e) => setInput(e.target.value)}
         disabled={isPosting}
       />
-      <button onClick={(e) => mutate({ content: input })}>Post</button>
+      <button onClick={() => mutate({ content: input })}>Post</button>
     </div>
   );
 };
