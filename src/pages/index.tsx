@@ -5,8 +5,9 @@ import { type RouterOutputs, api } from "~/utils/api";
 
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { LoadingPage } from "~/components/loading";
+import { LoadingPage, LoadingSpinner } from "~/components/loading";
 import { useState } from "react";
+import { toast } from "react-hot-toast";
 
 dayjs.extend(relativeTime);
 
@@ -22,6 +23,17 @@ const CreatePostWizard = () => {
       // returns promise but we don't need to await it, as it is a background process
       // `void` indicates this to TS
       void ctx.post.getAll.invalidate();
+    },
+    onError: (e) => {
+      const errorMessage = e.data?.zodError?.fieldErrors.content;
+
+      console.log("zodError", e.data);
+
+      if (errorMessage?.[0]) {
+        toast.error(errorMessage[0]);
+      } else {
+        toast.error("Too many recent posts! Try again later.");
+      }
     },
   });
 
@@ -41,9 +53,25 @@ const CreatePostWizard = () => {
         placeholder="Type some emojis!"
         value={input}
         onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (input !== "") mutate({ content: input });
+          }
+        }}
         disabled={isPosting}
       />
-      <button onClick={() => mutate({ content: input })}>Post</button>
+      {input !== "" && !isPosting && (
+        <button onClick={() => mutate({ content: input })} disabled={isPosting}>
+          Post
+        </button>
+      )}
+
+      {isPosting && (
+        <div className="flex items-center justify-center">
+          <LoadingSpinner size={24} />
+        </div>
+      )}
     </div>
   );
 };
@@ -82,7 +110,7 @@ const Feed = () => {
   // Will use cached data if available and not invalidated
   const posts = api.post.getAll.useQuery();
 
-  if (posts.isLoading) return <LoadingPage size={16} />;
+  if (posts.isLoading) return <LoadingPage size={64} />;
   if (!posts.data) return <div>Something went wrong...</div>;
 
   return (
