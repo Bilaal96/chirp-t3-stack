@@ -1,6 +1,7 @@
 import { useUser, SignOutButton } from "@clerk/nextjs";
 import Head from "next/head";
 import Image from "next/image";
+import Link from "next/link";
 import { type RouterOutputs, api } from "~/utils/api";
 
 import dayjs from "dayjs";
@@ -41,13 +42,15 @@ const CreatePostWizard = () => {
 
   return (
     <div className="flex w-full gap-4">
-      <Image
-        src={user.profileImageUrl}
-        width="48"
-        height="48"
-        alt="profile image"
-        className="rounded-full"
-      />
+      <div className="flex items-center">
+        <Image
+          src={user.profileImageUrl}
+          width="48"
+          height="48"
+          alt="profile image"
+          className="rounded-full"
+        />
+      </div>
       <input
         className="grow rounded bg-transparent p-2 outline-none focus:outline-slate-600"
         placeholder="Type some emojis!"
@@ -66,7 +69,6 @@ const CreatePostWizard = () => {
           Post
         </button>
       )}
-
       {isPosting && (
         <div className="flex items-center justify-center">
           <LoadingSpinner size={24} />
@@ -93,12 +95,16 @@ const PostView = ({ post, author }: PostWithAuthor) => {
       />
 
       <div key={post.id} className="flex flex-col">
-        <div className="flex gap-2 font-bold text-slate-400">
-          <span>{`@${author.username}`}</span>{" "}
-          <span className="font-bold">·</span>{" "}
-          <span className="font-thin">{`${dayjs(
-            post.createdAt
-          ).fromNow()}`}</span>
+        <div className="flex gap-2 font-bold text-slate-400 ">
+          <Link href={`/@${author.username}`}>
+            <span className="hover:underline">{`@${author.username}`}</span>
+          </Link>
+          <span className="font-bold">·</span>
+          <Link href={`/post/${post.id}`}>
+            <span className="font-thin hover:underline">{`${dayjs(
+              post.createdAt
+            ).fromNow()}`}</span>
+          </Link>
         </div>
         <span className="text-2xl">{post.content}</span>
       </div>
