@@ -4,14 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { type RouterOutputs, api } from "~/utils/api";
 
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
 import { LoadingPage, LoadingSpinner } from "~/components/loading";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { PageLayout } from "~/components/page-layout";
-
-dayjs.extend(relativeTime);
+import Posts from "~/components/posts";
 
 const CreatePostWizard = () => {
   const [input, setInput] = useState("");
@@ -79,40 +76,6 @@ const CreatePostWizard = () => {
   );
 };
 
-/**
- * RouterOutputs is a helper that allows us to access the types of our tRPC router
- * Here we're using it to get the type of a SINGLE post from the array returned by api.post.getAll */
-type PostWithAuthor = RouterOutputs["post"]["getAll"][number];
-
-const PostView = ({ post, author }: PostWithAuthor) => {
-  return (
-    <div className="flex items-center gap-4 border-b border-slate-400 p-8">
-      <Image
-        className="rounded-full"
-        src={author?.profileImageUrl ?? ""}
-        alt={`@${author.username}'s profile image`}
-        width="48"
-        height="48"
-      />
-
-      <div key={post.id} className="flex flex-col">
-        <div className="flex gap-2 font-bold text-slate-400 ">
-          <Link href={`/@${author.username}`}>
-            <span className="hover:underline">{`@${author.username}`}</span>
-          </Link>
-          <span className="font-bold">·</span>
-          <Link href={`/post/${post.id}`}>
-            <span className="font-thin hover:underline">{`${dayjs(
-              post.createdAt
-            ).fromNow()}`}</span>
-          </Link>
-        </div>
-        <span className="text-2xl">{post.content}</span>
-      </div>
-    </div>
-  );
-};
-
 const Feed = () => {
   // Will use cached data if available and not invalidated
   const posts = api.post.getAll.useQuery();
@@ -120,13 +83,7 @@ const Feed = () => {
   if (posts.isLoading) return <LoadingPage size={64} />;
   if (!posts.data) return <div>Something went wrong...</div>;
 
-  return (
-    <div className="flex flex-col">
-      {posts.data?.map((postWithAuthor) => (
-        <PostView key={postWithAuthor.post.id} {...postWithAuthor} />
-      ))}
-    </div>
-  );
+  return <Posts posts={posts.data} />;
 };
 
 export default function Home() {

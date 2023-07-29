@@ -11,6 +11,7 @@ import filterUserForClient from "~/server/helpers/filter-user-for-client";
 
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { Post } from "@prisma/client";
 
 // Create a new ratelimiter, that allows 3 requests per minute (1 m)
 const ratelimit = new Ratelimit({
@@ -18,6 +19,34 @@ const ratelimit = new Ratelimit({
   limiter: Ratelimit.slidingWindow(3, "1 m"),
   analytics: true,
 });
+
+// Find author for each post, returning an array of objects containing both post and its author
+const addUserDataToPosts = async (posts: Post[]) => {
+  // Import clerkClient and use it to get all user info for each post author
+  const users = (
+    await clerkClient.users.getUserList({
+      userId: posts.map((post) => post.authorId),
+      limit: 100,
+    })
+  ).map(filterUserForClient);
+
+  return posts.map((post) => {
+    const author = users.find((user) => user.id === post.authorId);
+
+    // Ensure that author is not undefined
+    // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
+    if (!author || !author.username)
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Author for posts not found",
+      });
+
+    return {
+      post,
+      author,
+    };
+  });
+};
 
 export const postRouter = createTRPCRouter({
   hello: publicProcedure
@@ -27,6 +56,7 @@ export const postRouter = createTRPCRouter({
         greeting: `Hello ${input.text}`,
       };
     }),
+
   getAll: publicProcedure.query(async ({ ctx }) => {
     // take: limits number of posts returned
     const posts = await ctx.prisma.post.findMany({
@@ -34,31 +64,22 @@ export const postRouter = createTRPCRouter({
       orderBy: [{ createdAt: "desc" }],
     });
 
-    // Import clerkClient and use it to get all user info for each post author
-    const users = (
-      await clerkClient.users.getUserList({
-        userId: posts.map((post) => post.authorId),
-        limit: 100,
-      })
-    ).map(filterUserForClient);
-
-    return posts.map((post) => {
-      const author = users.find((user) => user.id === post.authorId);
-
-      // Ensure that author is not undefined
-      // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
-      if (!author || !author.username)
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Author for posts not found",
-        });
-
-      return {
-        post,
-        author,
-      };
-    });
+    return addUserDataToPosts(posts);
   }),
+
+  getPostsByUserId: publicProcedure
+    .input(z.object({ userId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const posts = await ctx.prisma.post.findMany({
+        where: {
+          authorId: input.userId,
+        },
+        take: 100,
+        orderBy: [{ createdAt: "desc" }],
+      });
+
+      return addUserDataToPosts(posts);
+    }),
 
   create: privateProcedure
     .input(

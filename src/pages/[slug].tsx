@@ -9,6 +9,18 @@ import superjson from "superjson";
 import { appRouter } from "~/server/api/root";
 import { prisma } from "~/server/db";
 import Image from "next/image";
+import { LoadingPage } from "~/components/loading";
+import Posts from "~/components/posts";
+
+const ProfileFeed = ({ userId }: { userId: string }) => {
+  const posts = api.post.getPostsByUserId.useQuery({ userId });
+
+  if (posts.isLoading) return <LoadingPage size={64} />;
+  if (!posts.data || posts.data.length === 0)
+    return <div>User has not posted</div>;
+
+  return <Posts posts={posts.data} />;
+};
 
 const ProfilePage: NextPage<{ username: string }> = ({ username }) => {
   // const params = useParams();
@@ -38,6 +50,7 @@ const ProfilePage: NextPage<{ username: string }> = ({ username }) => {
         <div className="mt-[calc(64px)]">
           <h1 className="p-6 text-2xl font-bold">{`@${user.data.username}`}</h1>
           <div className="border-b border-slate-400" />
+          <ProfileFeed userId={user.data.id} />
         </div>
       </PageLayout>
     </>
