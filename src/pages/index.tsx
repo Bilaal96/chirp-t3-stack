@@ -1,8 +1,6 @@
 import { useUser, SignOutButton } from "@clerk/nextjs";
-import Head from "next/head";
 import Image from "next/image";
-import Link from "next/link";
-import { type RouterOutputs, api } from "~/utils/api";
+import { api } from "~/utils/api";
 
 import { LoadingPage, LoadingSpinner } from "~/components/loading";
 import { useState } from "react";

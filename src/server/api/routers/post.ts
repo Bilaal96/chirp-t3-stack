@@ -11,7 +11,7 @@ import filterUserForClient from "~/server/helpers/filter-user-for-client";
 
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
-import { Post } from "@prisma/client";
+import type { Post } from "@prisma/client";
 
 // Create a new ratelimiter, that allows 3 requests per minute (1 m)
 const ratelimit = new Ratelimit({
