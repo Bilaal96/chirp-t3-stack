@@ -1,12 +1,13 @@
-import { clerkClient } from "@clerk/nextjs";
-import type { User } from "@clerk/nextjs/dist/types/server";
-import { TRPCError } from "@trpc/server";
-import { z } from "zod";
 import {
   createTRPCRouter,
   privateProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
+
+import { clerkClient } from "@clerk/nextjs";
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
+import filterUserForClient from "~/server/helpers/filter-user-for-client";
 
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
@@ -17,16 +18,6 @@ const ratelimit = new Ratelimit({
   limiter: Ratelimit.slidingWindow(3, "1 m"),
   analytics: true,
 });
-
-// Extract user data accessible on client side
-const filterUserForClient = (user: User) => {
-  const { id, username, profileImageUrl } = user;
-  return {
-    id,
-    username,
-    profileImageUrl,
-  };
-};
 
 export const postRouter = createTRPCRouter({
   hello: publicProcedure
