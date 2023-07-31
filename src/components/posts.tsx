@@ -12,7 +12,7 @@ dayjs.extend(relativeTime);
  * Here we're using it to get the type of a SINGLE post from the array returned by api.post.getAll */
 type PostWithAuthor = RouterOutputs["post"]["getAll"][number];
 
-const PostView = ({ post, author }: PostWithAuthor) => {
+export const PostView = ({ post, author }: PostWithAuthor) => {
   return (
     <div className="flex items-center gap-4 border-b border-slate-400 p-8">
       <Image
