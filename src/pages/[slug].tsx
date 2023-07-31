@@ -1,16 +1,13 @@
-import Head from "next/head";
 import type { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import { api } from "~/utils/api";
-import { PageLayout } from "~/components/page-layout";
-
-// For getStaticProps
-import { createServerSideHelpers } from "@trpc/react-query/server";
-import superjson from "superjson";
-import { appRouter } from "~/server/api/root";
-import { prisma } from "~/server/db";
+import Head from "next/head";
 import Image from "next/image";
 import { LoadingPage } from "~/components/loading";
+import { PageLayout } from "~/components/page-layout";
 import Posts from "~/components/posts";
+
+// For getStaticProps
+import { generateServerSideHelpers } from "~/server/helpers/server-side-helpers";
 
 const ProfileFeed = ({ userId }: { userId: string }) => {
   const posts = api.post.getPostsByUserId.useQuery({ userId });
@@ -76,11 +73,7 @@ const ProfilePage: NextPage<{ username: string }> = ({ username }) => {
  * This treats the page as a static page but we can trigger revalidation when and how we choose
  */
 export const getStaticProps: GetStaticProps = async (context) => {
-  const helpers = createServerSideHelpers({
-    router: appRouter,
-    ctx: { prisma, userId: null },
-    transformer: superjson, // optional - adds superjson serialization
-  });
+  const helpers = generateServerSideHelpers();
 
   const slug = context.params?.slug;
 
