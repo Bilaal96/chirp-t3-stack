@@ -21,6 +21,16 @@ const config = {
   images: {
     domains: ["images.clerk.dev"],
   },
+
+  // Leave these to our CI via Github Actions
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
+  swcMinify: true, // used instead of Babel
 };
 
 export default config;
